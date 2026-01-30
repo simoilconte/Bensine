@@ -32,7 +32,6 @@ import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import type { Id } from "@convex/_generated/dataModel"
 import { PageHeader } from "@/components/PageHeader"
-import { getPartRequestBadgeClass, getPartRequestLabel } from "@/lib/statusStyles"
 
 type PartRequestStatus = "DA_ORDINARE" | "ORDINATO" | "ARRIVATO" | "CONSEGNATO" | "ANNULLATO"
 

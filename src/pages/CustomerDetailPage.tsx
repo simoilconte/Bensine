@@ -1,4 +1,5 @@
 import { useState } from "react"
+import * as React from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation } from "convex/react"
 import { 
@@ -332,9 +333,9 @@ export function CustomerDetailPage() {
                 <DocumentUpload customerId={id as Id<"customers">} />
               )}
               
-              {customer.documents && customer.documents.length > 0 ? (
+              {(customer as any).documents && (customer as any).documents.length > 0 ? (
                 <div className="space-y-2">
-                  {customer.documents.map((doc: any) => (
+                  {(customer as any).documents.map((doc: any) => (
                     <DocumentItem 
                       key={doc.fileId} 
                       document={doc} 
@@ -679,8 +680,8 @@ function DocumentItem({
     }
   }
 
-  const isImage = document.fileType.startsWith("image/")
-  const isPdf = document.fileType === "application/pdf"
+  // const isImage = document.fileType.startsWith("image/")
+  // const isPdf = document.fileType === "application/pdf"
 
   return (
     <div className="flex items-center gap-3 p-3 rounded-2xl border bg-white hover:bg-gray-50 transition-colors">
