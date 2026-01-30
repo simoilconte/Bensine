@@ -202,7 +202,7 @@ export const seedDatabase = mutation({
       notes: "Scorta minima raggiunta",
     })
 
-    const part5Id = await ctx.db.insert("parts", {
+    await ctx.db.insert("parts", {
       name: "Olio motore 5W30 (1L)",
       sku: "OM-005",
       supplier: "Castrol",
@@ -213,7 +213,7 @@ export const seedDatabase = mutation({
       location: "Scaffale C1",
     })
 
-    const part6Id = await ctx.db.insert("parts", {
+    await ctx.db.insert("parts", {
       name: "Candele accensione",
       sku: "CA-006",
       oemCode: "NGK-BKR6E",
@@ -247,7 +247,7 @@ export const seedDatabase = mutation({
       location: "Scaffale D2",
     })
 
-    const part9Id = await ctx.db.insert("parts", {
+    await ctx.db.insert("parts", {
       name: "Ammortizzatore anteriore",
       sku: "AM-009",
       supplier: "Monroe",

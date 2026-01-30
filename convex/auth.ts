@@ -105,7 +105,7 @@ export const signUp = mutation({
       expiresAt,
     })
 
-    const user = await ctx.db.get(userId)
+    await ctx.db.get(userId) // Verify user exists
 
     return {
       token,

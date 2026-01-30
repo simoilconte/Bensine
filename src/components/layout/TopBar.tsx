@@ -1,7 +1,6 @@
-import * as React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Menu, UserCircle, LogOut, User, Wrench } from "lucide-react"
+import { UserCircle, LogOut, User, Wrench } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BrandMark } from "@/components/BrandMark"
 import { useMediaQuery } from "@/hooks/use-media-query"
@@ -37,7 +36,7 @@ export function TopBar({ title }: TopBarProps) {
   const [isChangingRole, setIsChangingRole] = useState(false)
   const setUserRole = useMutation(api.users.adminSetUserRole)
   
-  const isDev = import.meta.env.DEV
+  const isDev = import.meta.env?.DEV || false
 
   const handleSignOut = async () => {
     try {
