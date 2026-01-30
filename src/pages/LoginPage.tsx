@@ -1,27 +1,21 @@
 import * as React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useMutation } from "convex/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { BrandMark } from "@/components/BrandMark"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
-import { api } from "@convex/_generated/api"
 
 export function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [isSeeding, setIsSeeding] = useState(false)
   const [isRegisterMode, setIsRegisterMode] = useState(false)
   const { signIn, signUp } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
-  const seedDatabase = useMutation(api.seed.seedDatabase)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,42 +47,6 @@ export function LoginPage() {
     }
   }
 
-  const handleSeed = async () => {
-    setIsSeeding(true)
-    try {
-      const result = await seedDatabase()
-      if (result.seeded) {
-        toast({
-          title: "Database popolato",
-          description: `Creati ${result.data?.users} utenti, ${result.data?.customers} clienti, ${result.data?.vehicles} veicoli, ${result.data?.parts} ricambi, ${result.data?.partRequests} richieste`,
-        })
-      } else {
-        toast({
-          title: "Database già popolato",
-          description: "I dati demo sono già presenti",
-        })
-      }
-    } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.message || "Errore durante il popolamento",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSeeding(false)
-    }
-  }
-
-  const fillDemoCredentials = (role: "admin" | "bensine" | "cliente") => {
-    const credentials = {
-      admin: { email: "admin@bensine.it", password: "admin123" },
-      bensine: { email: "luca@bensine.it", password: "bensine123" },
-      cliente: { email: "cliente@bensine.it", password: "cliente123" },
-    }
-    setEmail(credentials[role].email)
-    setPassword(credentials[role].password)
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center brand-bg px-4">
       <div className="w-full max-w-md space-y-6">
@@ -110,7 +68,14 @@ export function LoginPage() {
         <Card className="brand-card-tint">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <BrandMark size="lg" />
+              <img 
+                src="/logo.png" 
+                alt="Bensine" 
+                className="h-20 w-20 rounded-full ring-4 ring-brand-orange/30 object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
             </div>
             <CardTitle className="text-2xl font-semibold">
               {isRegisterMode ? "Registrati" : "Benvenuto"}
@@ -186,57 +151,6 @@ export function LoginPage() {
               </button>
             </div>
           </form>
-          
-          {!isRegisterMode && (
-            <div className="mt-6 space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 mb-3">Utenti demo (clicca per compilare):</p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fillDemoCredentials("admin")}
-                    className="text-xs"
-                  >
-                    Admin
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fillDemoCredentials("bensine")}
-                    className="text-xs"
-                  >
-                    Dipendente
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fillDemoCredentials("cliente")}
-                    className="text-xs"
-                  >
-                    Cliente
-                  </Button>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <button
-                  type="button"
-                  className="brand-btn-outline w-full"
-                  onClick={handleSeed}
-                  disabled={isSeeding}
-                >
-                  {isSeeding ? "Popolamento in corso..." : "🌱 Popola Database Demo"}
-                </button>
-                <p className="text-xs text-gray-500 text-center mt-2">
-                  Crea utenti, clienti, veicoli e ricambi di esempio
-                </p>
-              </div>
-            </div>
-          )}
           
           {/* Mascotte chip */}
           <div className="mt-6 text-center">
