@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Cinzel Decorative', serif;
+    
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 24.6 95% 53.1%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 142.1 76.2% 36.3%;
+    --accent-foreground: 355.7 100% 97.3%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 24.6 95% 53.1%;
+    --radius: 0.5rem;
+  }
+  
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  /* AGGRESSIVE BRAND SYSTEM */
+  
+  .brand-bg {
+    background: radial-gradient(1200px circle at top, rgba(249,115,22,0.12), transparent 55%),
+                linear-gradient(180deg, #FFF7ED 0%, #FFFFFF 55%, #FFFFFF 100%);
+  }
+  
+  .brand-container {
+    @apply mx-auto max-w-4xl p-4;
+  }
+  
+  .brand-section-title {
+    font-family: var(--font-display);
+    @apply tracking-wide text-lg text-[#F97316];
+  }
+  
+  .brand-card {
+    @apply rounded-3xl border bg-white;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+  }
+  
+  .brand-card-tint {
+    @apply rounded-3xl border border-[#F97316]/20 bg-white;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+  }
+  
+  .brand-card-header {
+    @apply flex items-center justify-between gap-3;
+  }
+  
+  .brand-btn-primary {
+    @apply h-11 rounded-2xl px-6 font-medium text-white shadow-md transition-all;
+    @apply hover:shadow-lg active:scale-[0.99];
+    background: linear-gradient(to bottom, #F97316, #EA580C);
+  }
+  
+  .brand-btn-success {
+    @apply h-11 rounded-2xl px-6 font-medium text-white shadow-md transition-all;
+    @apply hover:shadow-lg active:scale-[0.99];
+    background: linear-gradient(to bottom, #22C55E, #16A34A);
+  }
+  
+  .brand-btn-outline {
+    @apply h-11 rounded-2xl border border-slate-200 bg-white px-6 font-medium;
+    @apply hover:bg-slate-50 active:scale-[0.99] transition-all;
+  }
+  
+  .brand-input {
+    @apply h-11 rounded-2xl border-slate-200 focus:ring-2 focus:ring-[#F97316]/30;
+  }
+  
+  .badge-da-ordinare {
+    @apply bg-slate-100 text-slate-700 border border-slate-200 rounded-full px-3 py-1 text-xs font-medium;
+  }
+  
+  .badge-ordinato {
+    @apply bg-[#F97316]/15 text-[#F97316] border border-[#F97316]/30 rounded-full px-3 py-1 text-xs font-medium;
+  }
+  
+  .badge-arrivato {
+    @apply bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30 rounded-full px-3 py-1 text-xs font-medium;
+  }
+  
+  .badge-consegnato {
+    @apply bg-[#16A34A]/15 text-[#16A34A] border border-[#16A34A]/30 rounded-full px-3 py-1 text-xs font-medium;
+  }
+  
+  .badge-annullato {
+    @apply bg-red-100 text-red-700 border border-red-200 rounded-full px-3 py-1 text-xs font-medium;
+  }
+  
+  .brand-accent-line {
+    @apply h-[3px] w-full;
+    background: linear-gradient(to right, #F97316, #EA580C, #22C55E);
+  }
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (max-width: 768px) {
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .mobile-scroll::-webkit-scrollbar {
+    display: none;
+  }
+}
