@@ -36,10 +36,11 @@ export function LoginPage() {
         })
       }
       navigate("/clienti")
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Si è verificato un errore"
       toast({
         title: isRegisterMode ? "Errore di registrazione" : "Errore di accesso",
-        description: error.message || "Si è verificato un errore",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

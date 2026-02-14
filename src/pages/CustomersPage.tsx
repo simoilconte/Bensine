@@ -116,10 +116,11 @@ export function CustomersPage() {
       })
       setIsDialogOpen(false)
       resetForm()
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Errore durante la creazione"
       toast({
         title: "Errore",
-        description: error.message || "Errore durante la creazione",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

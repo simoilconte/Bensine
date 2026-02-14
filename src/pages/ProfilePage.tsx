@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery, useMutation } from "convex/react"
-import { User, Shield, Users, Settings, LogOut, ChevronRight } from "lucide-react"
+import { User, Shield, Users, Settings, LogOut, ChevronRight, Fuel, Truck } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -49,7 +49,7 @@ export function ProfilePage() {
   const navigate = useNavigate()
 
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [selectedUser, setSelectedUser] = useState<AppUser | null>(null)
   const [newRole, setNewRole] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -83,7 +83,7 @@ export function ProfilePage() {
         token,
         userId: selectedUser._id as Id<"appUsers">,
         role: newRole as "ADMIN" | "BENZINE" | "CLIENTE",
-        customerId: newRole === "CLIENTE" ? selectedUser.customerId : undefined,
+        customerId: newRole === "CLIENTE" ? selectedUser.customerId as Id<"customers"> | undefined : undefined,
       })
 
       toast({
@@ -93,10 +93,11 @@ export function ProfilePage() {
       setIsUserDialogOpen(false)
       setSelectedUser(null)
       setNewRole("")
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Errore durante l'aggiornamento"
       toast({
         title: "Errore",
-        description: error.message || "Errore durante l'aggiornamento",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -250,6 +251,50 @@ export function ProfilePage() {
         </Card>
       )}
 
+      {/* Admin: Configuration */}
+      {isAdmin && (
+        <Card className="rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Configurazione
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div
+              className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 cursor-pointer"
+              onClick={() => navigate("/configurazione/alimentazione")}
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                  <Fuel className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="font-medium">Tipi di Alimentazione</p>
+                  <p className="text-sm text-gray-500">Gestisci i tipi di carburante disponibili</p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+            </div>
+            <div
+              className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 cursor-pointer"
+              onClick={() => navigate("/fornitori")}
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Truck className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium">Fornitori</p>
+                  <p className="text-sm text-gray-500">Gestisci l'anagrafica dei fornitori</p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* System Info */}
       <Card className="rounded-2xl">
         <CardHeader>
@@ -311,7 +356,7 @@ export function ProfilePage() {
                 <Label>Cliente collegato</Label>
                 <Select 
                   value={selectedUser?.customerId || ""} 
-                  onValueChange={(v) => setSelectedUser({ ...selectedUser, customerId: v })}
+                  onValueChange={(v) => setSelectedUser({ ...selectedUser!, customerId: v })}
                 >
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="Seleziona cliente" />

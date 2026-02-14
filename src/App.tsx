@@ -4,8 +4,9 @@ import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/pages/LoginPage'
 import { CustomersPage } from '@/pages/CustomersPage'
 import { CustomerDetailPage } from '@/pages/CustomerDetailPage'
-import { PartsPage } from '@/pages/PartsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
+import { FuelTypesConfigPage } from '@/pages/FuelTypesConfigPage'
+import { SuppliersPage } from '@/pages/SuppliersPage'
 import { useAuth } from '@/lib/auth-context'
 
 function App() {
@@ -40,7 +41,8 @@ function App() {
         <Routes>
           <Route path="/clienti" element={<CustomersPage />} />
           <Route path="/clienti/:id" element={<CustomerDetailPage />} />
-          <Route path="/ricambi" element={<PartsPage />} />
+          <Route path="/configurazione/alimentazione" element={<FuelTypesConfigPage />} />
+          <Route path="/fornitori" element={<SuppliersPage />} />
           <Route path="/profilo" element={<ProfilePage />} />
           <Route path="/" element={<Navigate to="/clienti" replace />} />
           <Route path="*" element={<Navigate to="/clienti" replace />} />

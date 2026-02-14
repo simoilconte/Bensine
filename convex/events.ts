@@ -5,9 +5,9 @@ export const createEvent = async (
   ctx: MutationCtx,
   args: {
     type: string
-    entityType: "customer" | "vehicle" | "part" | "partRequest"
-    entityId: Id<"customers"> | Id<"vehicles"> | Id<"parts"> | Id<"partRequests">
-    payload: any
+    entityType: "customer" | "vehicle" | "part" | "partRequest" | "fuelType" | "supplier"
+    entityId: Id<"customers"> | Id<"vehicles"> | Id<"parts"> | Id<"partRequests"> | Id<"fuelTypes"> | Id<"suppliers">
+    payload: Record<string, unknown>
     actorUserId: Id<"appUsers">
   }
 ) => {
@@ -24,16 +24,16 @@ export const createEventWithNotification = async (
   ctx: MutationCtx,
   args: {
     type: string
-    entityType: "customer" | "vehicle" | "part" | "partRequest"
-    entityId: Id<"customers"> | Id<"vehicles"> | Id<"parts"> | Id<"partRequests">
-    payload: any
+    entityType: "customer" | "vehicle" | "part" | "partRequest" | "fuelType" | "supplier"
+    entityId: Id<"customers"> | Id<"vehicles"> | Id<"parts"> | Id<"partRequests"> | Id<"fuelTypes"> | Id<"suppliers">
+    payload: Record<string, unknown>
     actorUserId: Id<"appUsers">
     customerId?: Id<"customers">
     notificationData?: {
       channel: "EMAIL" | "SMS" | "WHATSAPP" | "PUSH"
       to: string
       templateKey: string
-      data: any
+      data: Record<string, unknown>
     }
   }
 ) => {

@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation } from "convex/react"
 import { 
   User, Building2, Phone, Mail, MapPin, Car, ArrowLeft, 
-  Plus, Edit, FileText, ChevronRight
+  Plus, Edit, FileText, ChevronRight, Package
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { api } from "@convex/_generated/api"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
@@ -34,31 +41,37 @@ interface Vehicle {
   year?: number
   fuelType?: string
   km?: number
-  tires: any
+  tires: Record<string, unknown>
   registrationDocFileId?: string
-  registrationDocMeta?: any
+  registrationDocMeta?: {
+    filename: string
+    contentType: string
+    uploadedAt: number
+  }
   createdAt: number
 }
 
-interface PartRequest {
+interface Part {
   _id: string
-  customerId: string
-  vehicleId: string
-  customerName: string
-  vehiclePlate: string
-  vehicleMakeModel: string
-  requestedItems: Array<{
-    partId?: string
-    freeTextName?: string
-    qty: number
-    partName: string
-  }>
-  status: string
-  supplier?: string
+  name: string
+  sku?: string
+  oemCode?: string
+  supplierId?: string
+  supplierName?: string | null
+  unitCost?: number
+  unitPrice?: number
+  partPrice?: number
+  laborPrice?: number
+  stockQty: number
+  minStockQty?: number
+  location?: string
   notes?: string
-  timeline: any[]
+  vehicleId?: string
+  isLowStock: boolean
   createdAt: number
 }
+
+
 
 export function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -68,6 +81,9 @@ export function CustomerDetailPage() {
 
   const [activeTab, setActiveTab] = useState("info")
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false)
+  const [isPartDialogOpen, setIsPartDialogOpen] = useState(false)
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null)
+  const [expandedVehicles, setExpandedVehicles] = useState<Set<string>>(new Set())
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Vehicle form state
@@ -77,6 +93,16 @@ export function CustomerDetailPage() {
   const [year, setYear] = useState("")
   const [fuelType, setFuelType] = useState("")
   const [km, setKm] = useState("")
+
+  // Part form state
+  const [partName, setPartName] = useState("")
+  const [partSku, setPartSku] = useState("")
+  const [partOemCode, setPartOemCode] = useState("")
+  const [partSupplierId, setPartSupplierId] = useState("")
+  const [partStockQty, setPartStockQty] = useState("1")
+  const [partPrice, setPartPrice] = useState("")
+  const [laborPrice, setLaborPrice] = useState("")
+  const [partNotes, setPartNotes] = useState("")
 
   const customer = useQuery(api.customers.get, token && id ? {
     token,
@@ -88,12 +114,75 @@ export function CustomerDetailPage() {
     customerId: id as Id<"customers">,
   } : "skip")
 
-  const partRequests = useQuery(api.partRequests.list, token && id ? {
-    token,
-    customerId: id as Id<"customers">,
-  } : "skip")
+  const fuelTypes = useQuery(api.fuelTypes.list, token ? { token } : "skip")
+  const suppliers = useQuery(api.suppliers.list, token ? { token } : "skip")
 
   const createVehicle = useMutation(api.vehicles.create)
+  const createPart = useMutation(api.parts.create)
+
+  const toggleVehicleExpand = (vehicleId: string) => {
+    const newExpanded = new Set(expandedVehicles)
+    if (newExpanded.has(vehicleId)) {
+      newExpanded.delete(vehicleId)
+    } else {
+      newExpanded.add(vehicleId)
+    }
+    setExpandedVehicles(newExpanded)
+  }
+
+  const handleOpenPartDialog = (vehicleId: string) => {
+    setSelectedVehicleId(vehicleId)
+    setIsPartDialogOpen(true)
+  }
+
+  const resetPartForm = () => {
+    setPartName("")
+    setPartSku("")
+    setPartOemCode("")
+    setPartSupplierId("")
+    setPartStockQty("1")
+    setPartPrice("")
+    setLaborPrice("")
+    setPartNotes("")
+    setSelectedVehicleId(null)
+  }
+
+  const handleCreatePart = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!token || !selectedVehicleId) return
+
+    setIsSubmitting(true)
+    try {
+      await createPart({
+        token,
+        name: partName,
+        sku: partSku || undefined,
+        oemCode: partOemCode || undefined,
+        supplierId: partSupplierId ? (partSupplierId as Id<"suppliers">) : undefined,
+        stockQty: parseInt(partStockQty) || 1,
+        partPrice: partPrice ? parseFloat(partPrice) : undefined,
+        laborPrice: laborPrice ? parseFloat(laborPrice) : undefined,
+        notes: partNotes || undefined,
+        vehicleId: selectedVehicleId as Id<"vehicles">,
+      })
+
+      toast({
+        title: "Ricambio aggiunto",
+        description: `${partName} aggiunto con successo`,
+      })
+      setIsPartDialogOpen(false)
+      resetPartForm()
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Errore durante la creazione"
+      toast({
+        title: "Errore",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const resetVehicleForm = () => {
     setPlate("")
@@ -127,10 +216,11 @@ export function CustomerDetailPage() {
       })
       setIsVehicleDialogOpen(false)
       resetVehicleForm()
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Errore durante la creazione"
       toast({
         title: "Errore",
-        description: error.message || "Errore durante la creazione",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -138,23 +228,7 @@ export function CustomerDetailPage() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "daOrdinare" | "ordinato" | "arrivato" | "consegnato" | "annullato"> = {
-      "DA_ORDINARE": "daOrdinare",
-      "ORDINATO": "ordinato",
-      "ARRIVATO": "arrivato",
-      "CONSEGNATO": "consegnato",
-      "ANNULLATO": "annullato",
-    }
-    const labels: Record<string, string> = {
-      "DA_ORDINARE": "Da ordinare",
-      "ORDINATO": "Ordinato",
-      "ARRIVATO": "Arrivato",
-      "CONSEGNATO": "Consegnato",
-      "ANNULLATO": "Annullato",
-    }
-    return <Badge variant={variants[status]}>{labels[status]}</Badge>
-  }
+
 
   if (customer === undefined) {
     return (
@@ -249,9 +323,6 @@ export function CustomerDetailPage() {
           <TabsTrigger value="veicoli" className="flex-1">
             Veicoli {vehicles && `(${vehicles.length})`}
           </TabsTrigger>
-          <TabsTrigger value="ricambi" className="flex-1">
-            Ricambi {partRequests && `(${partRequests.length})`}
-          </TabsTrigger>
         </TabsList>
 
         {/* Info Tab */}
@@ -333,9 +404,9 @@ export function CustomerDetailPage() {
                 <DocumentUpload customerId={id as Id<"customers">} />
               )}
               
-              {(customer as any).documents && (customer as any).documents.length > 0 ? (
+              {(customer as { documents?: Array<{ fileId: string; fileName: string; uploadedAt: number; fileType: string }> }).documents && (customer as { documents?: Array<{ fileId: string; fileName: string; uploadedAt: number; fileType: string }> }).documents!.length > 0 ? (
                 <div className="space-y-2">
-                  {(customer as any).documents.map((doc: any) => (
+                  {(customer as { documents?: Array<{ fileId: string; fileName: string; uploadedAt: number; fileType: string }> }).documents!.map((doc) => (
                     <DocumentItem 
                       key={doc.fileId} 
                       document={doc} 
@@ -361,29 +432,15 @@ export function CustomerDetailPage() {
           )}
 
           {vehicles?.map((vehicle: Vehicle) => (
-            <Card key={vehicle._id} className="rounded-2xl">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                      <Car className="h-5 w-5 text-gray-600" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-lg tracking-wider">{vehicle.plate}</p>
-                      <p className="text-sm text-gray-500">
-                        {[vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ") || "Dettagli non specificati"}
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </div>
-                {vehicle.km && (
-                  <p className="text-sm text-gray-500 mt-2">
-                    {vehicle.km.toLocaleString()} km
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <VehicleCard 
+              key={vehicle._id} 
+              vehicle={vehicle}
+              isExpanded={expandedVehicles.has(vehicle._id)}
+              onToggleExpand={() => toggleVehicleExpand(vehicle._id)}
+              onAddPart={() => handleOpenPartDialog(vehicle._id)}
+              canEdit={canEdit}
+              token={token}
+            />
           ))}
 
           {vehicles?.length === 0 && (
@@ -401,48 +458,6 @@ export function CustomerDetailPage() {
           )}
         </TabsContent>
 
-        {/* Ricambi Tab */}
-        <TabsContent value="ricambi" className="space-y-4">
-          {partRequests?.map((request: PartRequest) => (
-            <Card key={request._id} className="rounded-2xl">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium">{request.vehiclePlate}</p>
-                    <p className="text-sm text-gray-500">
-                      {request.requestedItems.length} ricambi
-                    </p>
-                  </div>
-                  {getStatusBadge(request.status)}
-                </div>
-                <div className="text-sm text-gray-600">
-                  {request.requestedItems.slice(0, 2).map((item: PartRequest["requestedItems"][0], i: number) => (
-                    <p key={i}>• {item.partName} x{item.qty}</p>
-                  ))}
-                  {request.requestedItems.length > 2 && (
-                    <p className="text-gray-400">
-                      +{request.requestedItems.length - 2} altri
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {partRequests?.length === 0 && (
-            <Card className="rounded-2xl">
-              <CardContent className="p-8 text-center">
-                <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nessuna richiesta
-                </h3>
-                <p className="text-gray-600">
-                  Non ci sono richieste ricambi per questo cliente
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
       </Tabs>
 
       {/* New Vehicle Dialog */}
@@ -517,13 +532,18 @@ export function CustomerDetailPage() {
 
             <div className="space-y-2">
               <Label htmlFor="fuelType">Alimentazione</Label>
-              <Input
-                id="fuelType"
-                value={fuelType}
-                onChange={(e) => setFuelType(e.target.value)}
-                placeholder="Benzina, Diesel, GPL..."
-                className="h-11"
-              />
+              <Select value={fuelType} onValueChange={setFuelType}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Seleziona alimentazione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fuelTypes?.map((ft) => (
+                    <SelectItem key={ft._id} value={ft.name}>
+                      {ft.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <DialogFooter className="gap-2 sm:gap-0">
@@ -542,10 +562,498 @@ export function CustomerDetailPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* New Part Dialog */}
+      <Dialog open={isPartDialogOpen} onOpenChange={setIsPartDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nuovo Ricambio</DialogTitle>
+            <DialogDescription>
+              Aggiungi un ricambio al veicolo
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreatePart} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="partName">Nome ricambio *</Label>
+              <Input
+                id="partName"
+                value={partName}
+                onChange={(e) => setPartName(e.target.value)}
+                placeholder="Filtro olio, Pastiglie freno..."
+                required
+                className="h-11"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="partSku">Codice SKU</Label>
+                <Input
+                  id="partSku"
+                  value={partSku}
+                  onChange={(e) => setPartSku(e.target.value)}
+                  placeholder="SKU123"
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="partOemCode">Codice OEM</Label>
+                <Input
+                  id="partOemCode"
+                  value={partOemCode}
+                  onChange={(e) => setPartOemCode(e.target.value)}
+                  placeholder="OEM456"
+                  className="h-11"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="partSupplier">Fornitore</Label>
+              <Select value={partSupplierId} onValueChange={setPartSupplierId}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Seleziona fornitore" />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers?.filter((s: { isActive: boolean }) => s.isActive).map((supplier: { _id: string; companyName: string }) => (
+                    <SelectItem key={supplier._id} value={supplier._id}>
+                      {supplier.companyName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="partStockQty">Quantità *</Label>
+                <Input
+                  id="partStockQty"
+                  type="number"
+                  value={partStockQty}
+                  onChange={(e) => setPartStockQty(e.target.value)}
+                  placeholder="1"
+                  min="1"
+                  required
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="partPrice">Prezzo Ricambio (€)</Label>
+                <Input
+                  id="partPrice"
+                  type="number"
+                  step="0.01"
+                  value={partPrice}
+                  onChange={(e) => setPartPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="h-11"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="laborPrice">Prezzo Manodopera (€)</Label>
+                <Input
+                  id="laborPrice"
+                  type="number"
+                  step="0.01"
+                  value={laborPrice}
+                  onChange={(e) => setLaborPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="partNotes">Note</Label>
+                <Input
+                  id="partNotes"
+                  value={partNotes}
+                  onChange={(e) => setPartNotes(e.target.value)}
+                  placeholder="Note aggiuntive..."
+                  className="h-11"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsPartDialogOpen(false)
+                  resetPartForm()
+                }}
+                className="h-11"
+              >
+                Annulla
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className="h-11">
+                {isSubmitting ? "Salvataggio..." : "Salva"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
 
+
+// Vehicle Card Component with Parts
+function VehicleCard({ 
+  vehicle, 
+  isExpanded, 
+  onToggleExpand, 
+  onAddPart,
+  canEdit,
+  token
+}: { 
+  vehicle: Vehicle
+  isExpanded: boolean
+  onToggleExpand: () => void
+  onAddPart: () => void
+  canEdit: boolean
+  token: string | null
+}) {
+  const parts = useQuery(api.parts.listByVehicle, token ? {
+    token,
+    vehicleId: vehicle._id as Id<"vehicles">,
+  } : "skip")
+
+  return (
+    <Card className="rounded-2xl overflow-hidden">
+      <CardContent className="p-0">
+        <div 
+          className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={onToggleExpand}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <Car className="h-5 w-5 text-gray-600" />
+              </div>
+              <div>
+                <p className="font-bold text-lg tracking-wider">{vehicle.plate}</p>
+                <p className="text-sm text-gray-500">
+                  {[vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ") || "Dettagli non specificati"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {parts && parts.length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {parts.length} ricambi
+                </Badge>
+              )}
+              <ChevronRight 
+                className={`h-5 w-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
+              />
+            </div>
+          </div>
+          {vehicle.km && (
+            <p className="text-sm text-gray-500 mt-2">
+              {vehicle.km.toLocaleString()} km
+            </p>
+          )}
+        </div>
+
+        {isExpanded && (
+          <div className="border-t bg-gray-50 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium text-sm text-gray-700 flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Ricambi associati
+              </h4>
+              {canEdit && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onAddPart()
+                  }}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Aggiungi
+                </Button>
+              )}
+            </div>
+
+            {parts && parts.length > 0 ? (
+              <div className="space-y-2">
+                {parts.map((part: Part) => (
+                  <div 
+                    key={part._id} 
+                    className="bg-white p-3 rounded-xl border"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{part.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          {part.sku && <span>SKU: {part.sku}</span>}
+                          {part.oemCode && <span>OEM: {part.oemCode}</span>}
+                          <span>Qta: {part.stockQty}</span>
+                          {part.supplierName && (
+                            <span className="text-blue-600">• {part.supplierName}</span>
+                          )}
+                        </div>
+                      </div>
+                      {part.isLowStock && (
+                        <Badge variant="destructive" className="text-xs ml-2">
+                          Scorta bassa
+                        </Badge>
+                      )}
+                    </div>
+                    {/* Prezzi */}
+                    <div className="flex items-center justify-between pt-2 border-t text-sm">
+                      <div className="flex gap-4">
+                        {part.partPrice !== undefined && (
+                          <span className="text-gray-600">
+                            Ricambio: <span className="font-medium">€ {part.partPrice.toFixed(2)}</span>
+                          </span>
+                        )}
+                        {part.laborPrice !== undefined && (
+                          <span className="text-gray-600">
+                            M/O: <span className="font-medium">€ {part.laborPrice.toFixed(2)}</span>
+                          </span>
+                        )}
+                      </div>
+                      {(part.partPrice !== undefined || part.laborPrice !== undefined) && (
+                        <span className="font-bold text-brand-orange">
+                          Tot: € {((part.partPrice || 0) + (part.laborPrice || 0)).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {/* Totale complessivo */}
+                {(() => {
+                  const totalPartPrice = parts.reduce((sum, p) => sum + (p.partPrice || 0), 0)
+                  const totalLaborPrice = parts.reduce((sum, p) => sum + (p.laborPrice || 0), 0)
+                  const grandTotal = totalPartPrice + totalLaborPrice
+                  if (grandTotal > 0) {
+                    return (
+                      <div className="bg-brand-orange/10 p-3 rounded-xl border border-brand-orange/30 mt-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="font-medium">Totale ricambi:</span>
+                          <span>€ {totalPartPrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="font-medium">Totale manodopera:</span>
+                          <span>€ {totalLaborPrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center font-bold text-brand-orange pt-2 border-t border-brand-orange/20 mt-2">
+                          <span>TOTALE:</span>
+                          <span>€ {grandTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Nessun ricambio associato a questo veicolo
+              </p>
+            )}
+
+            {/* Registration Document Section */}
+            <div className="mt-4 pt-4 border-t">
+              <VehicleRegistrationDoc 
+                vehicle={vehicle} 
+                canEdit={canEdit} 
+                token={token}
+              />
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// Vehicle Registration Document Component
+function VehicleRegistrationDoc({ 
+  vehicle, 
+  canEdit, 
+  token 
+}: { 
+  vehicle: Vehicle
+  canEdit: boolean
+  token: string | null
+}) {
+  const { toast } = useToast()
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  
+  const generateUploadUrl = useMutation(api.vehicles.generateUploadUrl)
+  const uploadRegistrationDoc = useMutation(api.vehicles.uploadRegistrationDoc)
+  const registrationDocUrl = useQuery(
+    api.vehicles.getRegistrationDocUrl, 
+    token && vehicle.registrationDocFileId ? { token, vehicleId: vehicle._id as Id<"vehicles"> } : "skip"
+  )
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !token) return
+
+    // Validate file type
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Formato non valido",
+        description: "Sono accettati solo PDF, JPEG e PNG",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File troppo grande",
+        description: "La dimensione massima è 10MB",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      // Get upload URL
+      const uploadUrl = await generateUploadUrl({ token })
+      
+      // Upload file
+      const result = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      })
+      
+      const { storageId } = await result.json()
+      
+      // Save document reference
+      await uploadRegistrationDoc({
+        token,
+        vehicleId: vehicle._id as Id<"vehicles">,
+        fileId: storageId,
+        filename: file.name,
+        contentType: file.type,
+      })
+      
+      toast({
+        title: "Libretto caricato",
+        description: `${file.name} caricato con successo`,
+      })
+      
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Impossibile caricare il documento"
+      toast({
+        title: "Errore",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const isPdf = vehicle.registrationDocMeta?.contentType === 'application/pdf'
+  const isImage = vehicle.registrationDocMeta?.contentType?.startsWith('image/')
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="font-medium text-sm text-gray-700 flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          Libretto di circolazione
+        </h4>
+        {canEdit && (
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+              id={`registration-doc-upload-${vehicle._id}`}
+            />
+            <label htmlFor={`registration-doc-upload-${vehicle._id}`}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={isUploading}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  fileInputRef.current?.click()
+                }}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                {isUploading ? "Caricamento..." : (vehicle.registrationDocFileId ? "Sostituisci" : "Carica")}
+              </Button>
+            </label>
+          </div>
+        )}
+      </div>
+
+      {vehicle.registrationDocFileId ? (
+        <div className="bg-white p-3 rounded-xl border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                {isPdf ? (
+                  <FileText className="h-5 w-5 text-blue-600" />
+                ) : (
+                  <FileText className="h-5 w-5 text-green-600" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">
+                  {vehicle.registrationDocMeta?.filename || "Libretto"}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {isPdf ? "PDF" : isImage ? "Immagine" : "Documento"}
+                  {vehicle.registrationDocMeta?.uploadedAt && 
+                    ` • ${new Date(vehicle.registrationDocMeta.uploadedAt).toLocaleDateString("it-IT")}`
+                  }
+                </p>
+              </div>
+            </div>
+            {registrationDocUrl && (
+              <a
+                href={registrationDocUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-orange hover:text-brand-orangeDark text-sm font-medium"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Apri
+              </a>
+            )}
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500 text-center py-4 bg-white rounded-xl border border-dashed">
+          Nessun libretto caricato
+        </p>
+      )}
+      
+      {canEdit && (
+        <p className="text-xs text-gray-500 text-center">
+          PDF, JPEG, PNG • Max 10MB • Da smartphone puoi scattare una foto o scegliere dalla galleria
+        </p>
+      )}
+    </div>
+  )
+}
 
 // Document Upload Component
 function DocumentUpload({ customerId }: { customerId: Id<"customers"> }) {
@@ -593,10 +1101,11 @@ function DocumentUpload({ customerId }: { customerId: Id<"customers"> }) {
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Impossibile caricare il documento"
       toast({
         title: "Errore",
-        description: error.message || "Impossibile caricare il documento",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -639,7 +1148,7 @@ function DocumentItem({
   customerId, 
   canEdit 
 }: { 
-  document: any
+  document: { fileId: string; fileName: string; uploadedAt: number; fileType: string }
   customerId: Id<"customers">
   canEdit: boolean 
 }) {
@@ -649,7 +1158,7 @@ function DocumentItem({
   
   const getDocumentUrl = useQuery(api.customers.getDocumentUrl, token ? {
     token,
-    fileId: document.fileId,
+    fileId: document.fileId as Id<"_storage">,
   } : "skip")
   
   const removeDocument = useMutation(api.customers.removeDocument)
@@ -662,17 +1171,18 @@ function DocumentItem({
       await removeDocument({
         token,
         customerId,
-        fileId: document.fileId,
+        fileId: document.fileId as Id<"_storage">,
       })
       
       toast({
         title: "Documento eliminato",
         description: "Il documento è stato rimosso",
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Impossibile eliminare il documento"
       toast({
         title: "Errore",
-        description: error.message || "Impossibile eliminare il documento",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

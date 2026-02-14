@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Users, Package, User, Plus } from "lucide-react"
+import { Users, User, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BrandMark } from "@/components/BrandMark"
 import { BottomNavigation } from "@/components/layout/BottomNavigation"
@@ -21,15 +21,11 @@ export function AppShell({ children }: AppShellProps) {
   const getPageTitle = () => {
     if (location.pathname === "/clienti") return "Clienti"
     if (location.pathname.startsWith("/clienti/")) return "Dettaglio Cliente"
-    if (location.pathname === "/ricambi") return "Ricambi"
     if (location.pathname === "/profilo") return "Profilo"
     return "Bensine CRM"
   }
 
-  const showFab = canEdit && (
-    location.pathname === "/clienti" || 
-    location.pathname === "/ricambi"
-  )
+  const showFab = canEdit && location.pathname === "/clienti"
 
   const handleFabClick = () => {
     // FAB opens a dialog/sheet for new customer or new part request
@@ -72,15 +68,6 @@ export function AppShell({ children }: AppShellProps) {
                 >
                   <Users className="mr-3 h-5 w-5" />
                   Clienti
-                </Button>
-                
-                <Button
-                  variant={location.pathname === "/ricambi" ? "default" : "ghost"}
-                  className="w-full justify-start h-11"
-                  onClick={() => navigate("/ricambi")}
-                >
-                  <Package className="mr-3 h-5 w-5" />
-                  Ricambi
                 </Button>
                 
                 <Button

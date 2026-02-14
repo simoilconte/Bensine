@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom"
-import { Users, Package, User } from "lucide-react"
+import { Users, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function BottomNavigation() {
@@ -12,12 +12,6 @@ export function BottomNavigation() {
       icon: Users,
       label: "Clienti",
       active: location.pathname.startsWith("/clienti"),
-    },
-    {
-      href: "/ricambi",
-      icon: Package,
-      label: "Ricambi",
-      active: location.pathname === "/ricambi",
     },
     {
       href: "/profilo",

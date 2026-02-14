@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { useMutation } from "convex/react"
 import { api } from "@convex/_generated/api"
+import type { Id } from "@convex/_generated/dataModel"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +72,7 @@ export function TopBar({ title }: TopBarProps) {
     try {
       await setUserRole({
         token,
-        userId: user._id as any,
+        userId: user._id as Id<"appUsers">,
         role: newRole,
       })
       toast({
@@ -80,10 +81,11 @@ export function TopBar({ title }: TopBarProps) {
       })
       // Ricarica la pagina per aggiornare i permessi
       window.location.reload()
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Impossibile cambiare ruolo"
       toast({
         title: "Errore",
-        description: error.message || "Impossibile cambiare ruolo",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -146,7 +148,7 @@ export function TopBar({ title }: TopBarProps) {
                   <div className="px-2 py-2">
                     <Select
                       value={user?.role}
-                      onValueChange={(value) => handleDevRoleChange(value as any)}
+                      onValueChange={(value) => handleDevRoleChange(value as "ADMIN" | "BENZINE" | "CLIENTE")}
                       disabled={isChangingRole}
                     >
                       <SelectTrigger className="h-9">

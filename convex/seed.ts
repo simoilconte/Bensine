@@ -90,6 +90,60 @@ export const seedDatabase = mutation({
       },
     })
 
+    // Create suppliers first
+    const supplierBoschId = await ctx.db.insert("suppliers", {
+      companyName: "Bosch",
+      contactName: "Mario Rossi",
+      phone: "+39 02 1234567",
+      email: "info@bosch.it",
+      isActive: true,
+    })
+
+    const supplierMannId = await ctx.db.insert("suppliers", {
+      companyName: "Mann Filter",
+      contactName: "Luigi Bianchi",
+      phone: "+39 02 2345678",
+      isActive: true,
+    })
+
+    const supplierBremboId = await ctx.db.insert("suppliers", {
+      companyName: "Brembo",
+      contactName: "Giuseppe Verdi",
+      phone: "+39 02 3456789",
+      email: "info@brembo.it",
+      isActive: true,
+    })
+
+    const supplierCastrolId = await ctx.db.insert("suppliers", {
+      companyName: "Castrol",
+      isActive: true,
+    })
+
+    const supplierNGKId = await ctx.db.insert("suppliers", {
+      companyName: "NGK",
+      isActive: true,
+    })
+
+    const supplierGatesId = await ctx.db.insert("suppliers", {
+      companyName: "Gates",
+      isActive: true,
+    })
+
+    const supplierSKFId = await ctx.db.insert("suppliers", {
+      companyName: "SKF",
+      isActive: true,
+    })
+
+    const supplierMonroeId = await ctx.db.insert("suppliers", {
+      companyName: "Monroe",
+      isActive: true,
+    })
+
+    const supplierVartaId = await ctx.db.insert("suppliers", {
+      companyName: "Varta",
+      isActive: true,
+    })
+
     // Create vehicles
     const vehicle1Id = await ctx.db.insert("vehicles", {
       customerId: customer1Id,
@@ -159,7 +213,7 @@ export const seedDatabase = mutation({
       name: "Filtro olio",
       sku: "FO-001",
       oemCode: "1234567890",
-      supplier: "Bosch",
+      supplierId: supplierBoschId,
       unitCost: 8.50,
       unitPrice: 15.00,
       stockQty: 25,
@@ -171,7 +225,7 @@ export const seedDatabase = mutation({
       name: "Filtro aria",
       sku: "FA-002",
       oemCode: "0987654321",
-      supplier: "Mann",
+      supplierId: supplierMannId,
       unitCost: 12.00,
       unitPrice: 22.00,
       stockQty: 18,
@@ -182,7 +236,7 @@ export const seedDatabase = mutation({
     const part3Id = await ctx.db.insert("parts", {
       name: "Pastiglie freno anteriori",
       sku: "PF-003",
-      supplier: "Brembo",
+      supplierId: supplierBremboId,
       unitCost: 35.00,
       unitPrice: 65.00,
       stockQty: 8,
@@ -193,7 +247,7 @@ export const seedDatabase = mutation({
     const part4Id = await ctx.db.insert("parts", {
       name: "Dischi freno anteriori",
       sku: "DF-004",
-      supplier: "Brembo",
+      supplierId: supplierBremboId,
       unitCost: 55.00,
       unitPrice: 95.00,
       stockQty: 4,
@@ -205,7 +259,7 @@ export const seedDatabase = mutation({
     await ctx.db.insert("parts", {
       name: "Olio motore 5W30 (1L)",
       sku: "OM-005",
-      supplier: "Castrol",
+      supplierId: supplierCastrolId,
       unitCost: 8.00,
       unitPrice: 14.00,
       stockQty: 50,
@@ -217,7 +271,7 @@ export const seedDatabase = mutation({
       name: "Candele accensione",
       sku: "CA-006",
       oemCode: "NGK-BKR6E",
-      supplier: "NGK",
+      supplierId: supplierNGKId,
       unitCost: 4.50,
       unitPrice: 9.00,
       stockQty: 32,
@@ -228,7 +282,7 @@ export const seedDatabase = mutation({
     const part7Id = await ctx.db.insert("parts", {
       name: "Cinghia distribuzione",
       sku: "CD-007",
-      supplier: "Gates",
+      supplierId: supplierGatesId,
       unitCost: 45.00,
       unitPrice: 85.00,
       stockQty: 3,
@@ -239,7 +293,7 @@ export const seedDatabase = mutation({
     const part8Id = await ctx.db.insert("parts", {
       name: "Pompa acqua",
       sku: "PA-008",
-      supplier: "SKF",
+      supplierId: supplierSKFId,
       unitCost: 65.00,
       unitPrice: 120.00,
       stockQty: 2,
@@ -250,7 +304,7 @@ export const seedDatabase = mutation({
     await ctx.db.insert("parts", {
       name: "Ammortizzatore anteriore",
       sku: "AM-009",
-      supplier: "Monroe",
+      supplierId: supplierMonroeId,
       unitCost: 75.00,
       unitPrice: 140.00,
       stockQty: 6,
@@ -261,7 +315,7 @@ export const seedDatabase = mutation({
     const part10Id = await ctx.db.insert("parts", {
       name: "Batteria 60Ah",
       sku: "BA-010",
-      supplier: "Varta",
+      supplierId: supplierVartaId,
       unitCost: 70.00,
       unitPrice: 120.00,
       stockQty: 5,
@@ -354,6 +408,7 @@ export const seedDatabase = mutation({
         users: 4,
         customers: 3,
         vehicles: 4,
+        suppliers: 9,
         parts: 10,
         partRequests: 5,
       },

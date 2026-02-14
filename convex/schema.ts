@@ -94,19 +94,39 @@ export default defineSchema({
     .index("by_plate", ["plate"])
     .index("by_customer", ["customerId"]),
 
+  suppliers: defineTable({
+    companyName: v.string(),
+    contactName: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    address: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    isActive: v.boolean(),
+  })
+    .index("by_companyName", ["companyName"])
+    .searchIndex("search_companyName", {
+      searchField: "companyName",
+    }),
+
   parts: defineTable({
     name: v.string(),
     sku: v.optional(v.string()),
     oemCode: v.optional(v.string()),
-    supplier: v.optional(v.string()),
+    supplier: v.optional(v.string()), // Deprecated: kept for migration compatibility
+    supplierId: v.optional(v.id("suppliers")),
     unitCost: v.optional(v.number()),
     unitPrice: v.optional(v.number()),
+    partPrice: v.optional(v.number()),
+    laborPrice: v.optional(v.number()),
     stockQty: v.number(),
     minStockQty: v.optional(v.number()),
     location: v.optional(v.string()),
     notes: v.optional(v.string()),
+    vehicleId: v.optional(v.id("vehicles")),
   })
     .index("by_name", ["name"])
+    .index("by_vehicle", ["vehicleId"])
+    .index("by_supplier", ["supplierId"])
     .searchIndex("search_name", {
       searchField: "name",
     }),
@@ -146,7 +166,9 @@ export default defineSchema({
       v.literal("customer"), 
       v.literal("vehicle"), 
       v.literal("part"), 
-      v.literal("partRequest")
+      v.literal("partRequest"),
+      v.literal("fuelType"),
+      v.literal("supplier")
     ),
     entityId: v.string(),
     payload: v.any(),
@@ -154,6 +176,14 @@ export default defineSchema({
   })
     .index("by_entity", ["entityType", "entityId"])
     .index("by_type", ["type"]),
+
+  fuelTypes: defineTable({
+    name: v.string(),
+    order: v.number(),
+    isActive: v.boolean(),
+  })
+    .index("by_order", ["order"])
+    .index("by_active", ["isActive"]),
 
   notificationOutbox: defineTable({
     channel: v.union(

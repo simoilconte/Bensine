@@ -17,7 +17,6 @@ export const list = query({
     let parts
 
     if (args.searchText && args.searchText.trim().length > 0) {
-      // Use search index for text search
       parts = await ctx.db
         .query("parts")
         .withSearchIndex("search_name", (q) =>
@@ -28,21 +27,97 @@ export const list = query({
       parts = await ctx.db.query("parts").collect()
     }
 
-    return parts.map(part => ({
-      _id: part._id,
-      name: part.name,
-      sku: part.sku,
-      oemCode: part.oemCode,
-      supplier: part.supplier,
-      unitCost: part.unitCost,
-      unitPrice: part.unitPrice,
-      stockQty: part.stockQty,
-      minStockQty: part.minStockQty,
-      location: part.location,
-      notes: part.notes,
-      isLowStock: part.minStockQty !== undefined && part.stockQty <= part.minStockQty,
-      createdAt: part._creationTime,
-    }))
+    // Get supplier names
+    const partsWithSuppliers = await Promise.all(
+      parts.map(async (part) => {
+        let supplierName = null
+        if (part.supplierId) {
+          const supplier = await ctx.db.get(part.supplierId)
+          supplierName = supplier?.companyName || null
+        }
+
+        return {
+          _id: part._id,
+          name: part.name,
+          sku: part.sku,
+          oemCode: part.oemCode,
+          supplierId: part.supplierId,
+          supplierName,
+          unitCost: part.unitCost,
+          unitPrice: part.unitPrice,
+          partPrice: part.partPrice,
+          laborPrice: part.laborPrice,
+          stockQty: part.stockQty,
+          minStockQty: part.minStockQty,
+          location: part.location,
+          notes: part.notes,
+          vehicleId: part.vehicleId,
+          isLowStock: part.minStockQty !== undefined && part.stockQty <= part.minStockQty,
+          createdAt: part._creationTime,
+        }
+      })
+    )
+
+    return partsWithSuppliers
+  },
+})
+
+export const listByVehicle = query({
+  args: {
+    token: v.string(),
+    vehicleId: v.id("vehicles"),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await getUserFromToken(ctx, args.token)
+    if (!currentUser) {
+      throw new Error("Non autorizzato")
+    }
+
+    // Check permissions for CLIENTE role
+    if (currentUser.role === "CLIENTE") {
+      const vehicle = await ctx.db.get(args.vehicleId)
+      if (!vehicle || vehicle.customerId !== currentUser.customerId) {
+        throw new Error("Non autorizzato")
+      }
+    }
+
+    const parts = await ctx.db
+      .query("parts")
+      .withIndex("by_vehicle", (q) => q.eq("vehicleId", args.vehicleId))
+      .collect()
+
+    // Get supplier names
+    const partsWithSuppliers = await Promise.all(
+      parts.map(async (part) => {
+        let supplierName = null
+        if (part.supplierId) {
+          const supplier = await ctx.db.get(part.supplierId)
+          supplierName = supplier?.companyName || null
+        }
+
+        return {
+          _id: part._id,
+          name: part.name,
+          sku: part.sku,
+          oemCode: part.oemCode,
+          supplierId: part.supplierId,
+          supplierName,
+          unitCost: part.unitCost,
+          unitPrice: part.unitPrice,
+          partPrice: part.partPrice,
+          laborPrice: part.laborPrice,
+          stockQty: part.stockQty,
+          minStockQty: part.minStockQty,
+          location: part.location,
+          notes: part.notes,
+          vehicleId: part.vehicleId,
+          isLowStock: part.minStockQty !== undefined && part.stockQty <= part.minStockQty,
+          createdAt: part._creationTime,
+        }
+      })
+    )
+
+    return partsWithSuppliers
   },
 })
 
@@ -62,18 +137,28 @@ export const get = query({
       return null
     }
 
+    let supplierName = null
+    if (part.supplierId) {
+      const supplier = await ctx.db.get(part.supplierId)
+      supplierName = supplier?.companyName || null
+    }
+
     return {
       _id: part._id,
       name: part.name,
       sku: part.sku,
       oemCode: part.oemCode,
-      supplier: part.supplier,
+      supplierId: part.supplierId,
+      supplierName,
       unitCost: part.unitCost,
       unitPrice: part.unitPrice,
+      partPrice: part.partPrice,
+      laborPrice: part.laborPrice,
       stockQty: part.stockQty,
       minStockQty: part.minStockQty,
       location: part.location,
       notes: part.notes,
+      vehicleId: part.vehicleId,
       isLowStock: part.minStockQty !== undefined && part.stockQty <= part.minStockQty,
       createdAt: part._creationTime,
     }
@@ -86,13 +171,16 @@ export const create = mutation({
     name: v.string(),
     sku: v.optional(v.string()),
     oemCode: v.optional(v.string()),
-    supplier: v.optional(v.string()),
+    supplierId: v.optional(v.id("suppliers")),
     unitCost: v.optional(v.number()),
     unitPrice: v.optional(v.number()),
+    partPrice: v.optional(v.number()),
+    laborPrice: v.optional(v.number()),
     stockQty: v.number(),
     minStockQty: v.optional(v.number()),
     location: v.optional(v.string()),
     notes: v.optional(v.string()),
+    vehicleId: v.optional(v.id("vehicles")),
   },
   handler: async (ctx, args) => {
     const currentUser = await getUserFromToken(ctx, args.token)
@@ -114,13 +202,16 @@ export const create = mutation({
       name: args.name.trim(),
       sku: args.sku,
       oemCode: args.oemCode,
-      supplier: args.supplier,
+      supplierId: args.supplierId,
       unitCost: args.unitCost,
       unitPrice: args.unitPrice,
+      partPrice: args.partPrice,
+      laborPrice: args.laborPrice,
       stockQty: args.stockQty,
       minStockQty: args.minStockQty,
       location: args.location,
       notes: args.notes,
+      vehicleId: args.vehicleId,
     })
 
     // Create event
@@ -146,13 +237,16 @@ export const update = mutation({
     name: v.optional(v.string()),
     sku: v.optional(v.string()),
     oemCode: v.optional(v.string()),
-    supplier: v.optional(v.string()),
+    supplierId: v.optional(v.id("suppliers")),
     unitCost: v.optional(v.number()),
     unitPrice: v.optional(v.number()),
+    partPrice: v.optional(v.number()),
+    laborPrice: v.optional(v.number()),
     stockQty: v.optional(v.number()),
     minStockQty: v.optional(v.number()),
     location: v.optional(v.string()),
     notes: v.optional(v.string()),
+    vehicleId: v.optional(v.id("vehicles")),
   },
   handler: async (ctx, args) => {
     const currentUser = await getUserFromToken(ctx, args.token)
@@ -175,17 +269,20 @@ export const update = mutation({
       throw new Error("Quantità stock non può essere negativa")
     }
 
-    const patch: any = {}
+    const patch: Record<string, unknown> = {}
     if (args.name !== undefined) patch.name = args.name.trim()
     if (args.sku !== undefined) patch.sku = args.sku
     if (args.oemCode !== undefined) patch.oemCode = args.oemCode
-    if (args.supplier !== undefined) patch.supplier = args.supplier
+    if (args.supplierId !== undefined) patch.supplierId = args.supplierId
     if (args.unitCost !== undefined) patch.unitCost = args.unitCost
     if (args.unitPrice !== undefined) patch.unitPrice = args.unitPrice
+    if (args.partPrice !== undefined) patch.partPrice = args.partPrice
+    if (args.laborPrice !== undefined) patch.laborPrice = args.laborPrice
     if (args.stockQty !== undefined) patch.stockQty = args.stockQty
     if (args.minStockQty !== undefined) patch.minStockQty = args.minStockQty
     if (args.location !== undefined) patch.location = args.location
     if (args.notes !== undefined) patch.notes = args.notes
+    if (args.vehicleId !== undefined) patch.vehicleId = args.vehicleId
 
     await ctx.db.patch(args.partId, patch)
 

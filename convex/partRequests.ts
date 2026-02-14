@@ -49,7 +49,7 @@ export const list = query({
       partRequests.map(async (request) => {
         const customer = await ctx.db.get(request.customerId)
         const vehicle = await ctx.db.get(request.vehicleId)
-        
+
         // Search filter
         if (args.searchText) {
           const searchLower = args.searchText.toLowerCase()
@@ -68,15 +68,13 @@ export const list = query({
           })
         )
         
-        const makeModel = vehicle ? ((vehicle.make || "") + " " + (vehicle.model || "")).trim() : ""
-        
         return {
           _id: request._id,
           customerId: request.customerId,
           vehicleId: request.vehicleId,
           customerName: customer?.displayName || "Sconosciuto",
           vehiclePlate: vehicle?.plate || "Sconosciuto",
-          vehicleMakeModel: makeModel,
+          vehicleMakeModel: vehicle ? `${vehicle.make || ""} ${vehicle.model || ""}`.trim() : "",
           requestedItems: itemsWithNames,
           status: request.status,
           supplier: request.supplier,
@@ -136,8 +134,6 @@ export const get = query({
       })
     )
 
-    const makeModel = vehicle ? ((vehicle.make || "") + " " + (vehicle.model || "")).trim() : ""
-
     return {
       _id: partRequest._id,
       customerId: partRequest.customerId,
@@ -146,7 +142,7 @@ export const get = query({
       customerEmail: customer?.contacts?.email,
       customerPhone: customer?.contacts?.phone,
       vehiclePlate: vehicle?.plate || "Sconosciuto",
-      vehicleMakeModel: makeModel,
+      vehicleMakeModel: vehicle ? `${vehicle.make || ""} ${vehicle.model || ""}`.trim() : "",
       requestedItems: enrichedItems,
       status: partRequest.status,
       supplier: partRequest.supplier,
@@ -156,6 +152,7 @@ export const get = query({
     }
   },
 })
+
 
 export const create = mutation({
   args: {
@@ -245,6 +242,7 @@ export const create = mutation({
     return partRequestId
   },
 })
+
 
 export const update = mutation({
   args: {

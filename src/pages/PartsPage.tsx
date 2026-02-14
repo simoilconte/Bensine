@@ -36,7 +36,7 @@ import { PageHeader } from "@/components/PageHeader"
 type PartRequestStatus = "DA_ORDINARE" | "ORDINATO" | "ARRIVATO" | "CONSEGNATO" | "ANNULLATO"
 
 interface Part {
-  _id: string
+  _id: Id<"parts">
   name: string
   sku?: string
   oemCode?: string
@@ -69,7 +69,7 @@ interface PartRequest {
   status: string
   supplier?: string
   notes?: string
-  timeline: any[]
+  timeline: Array<Record<string, unknown>>
   createdAt: number
 }
 
@@ -82,7 +82,7 @@ export function PartsPage() {
   const [isPartDialogOpen, setIsPartDialogOpen] = useState(false)
   const [isStockDialogOpen, setIsStockDialogOpen] = useState(false)
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false)
-  const [selectedPart, setSelectedPart] = useState<any>(null)
+  const [selectedPart, setSelectedPart] = useState<Part | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Part form state
@@ -173,10 +173,11 @@ export function PartsPage() {
       })
       setIsPartDialogOpen(false)
       resetPartForm()
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Errore durante la creazione"
       toast({
         title: "Errore",
-        description: error.message || "Errore durante la creazione",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -204,10 +205,11 @@ export function PartsPage() {
       setSelectedPart(null)
       setStockDelta(0)
       setStockReason("")
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Errore durante l'aggiornamento"
       toast({
         title: "Errore",
-        description: error.message || "Errore durante l'aggiornamento",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -229,10 +231,11 @@ export function PartsPage() {
         title: "Stato aggiornato",
         description: `Richiesta aggiornata a "${getStatusLabel(newStatus)}"`,
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Errore durante l'aggiornamento"
       toast({
         title: "Errore",
-        description: error.message || "Errore durante l'aggiornamento",
+        description: errorMessage,
         variant: "destructive",
       })
     }
@@ -417,7 +420,7 @@ export function PartsPage() {
                     className="pl-10 h-11"
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PartRequestStatus | "all")}>
                   <SelectTrigger className="h-11 w-full sm:w-40">
                     <SelectValue placeholder="Stato" />
                   </SelectTrigger>

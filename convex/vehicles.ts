@@ -211,7 +211,7 @@ export const update = mutation({
       throw new Error("Veicolo non trovato")
     }
 
-    const patch: any = {}
+    const patch: Record<string, unknown> = {}
 
     // Validate plate if provided
     if (args.plate !== undefined) {

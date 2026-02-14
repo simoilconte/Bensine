@@ -167,12 +167,13 @@ export const validateSession = query({
 })
 
 // Helper to get current user from session token
-export async function getCurrentUserFromToken(ctx: any, token: string | null) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getCurrentUserFromToken(ctx: { db: any }, token: string | null) {
   if (!token) return null
 
   const session = await ctx.db
     .query("sessions")
-    .withIndex("by_token", (q: any) => q.eq("token", token))
+    .withIndex("by_token", (q: { eq: (field: string, value: string) => unknown }) => q.eq("token", token))
     .first()
 
   if (!session) return null
