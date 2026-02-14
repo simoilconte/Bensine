@@ -89,7 +89,7 @@ export function PartsPage() {
   const [partName, setPartName] = useState("")
   const [partSku, setPartSku] = useState("")
   const [partOemCode, setPartOemCode] = useState("")
-  const [partSupplier, setPartSupplier] = useState("")
+  const [partSupplierId, setPartSupplierId] = useState("")
   const [partUnitCost, setPartUnitCost] = useState("")
   const [partUnitPrice, setPartUnitPrice] = useState("")
   const [partStockQty, setPartStockQty] = useState("")
@@ -138,7 +138,7 @@ export function PartsPage() {
     setPartName("")
     setPartSku("")
     setPartOemCode("")
-    setPartSupplier("")
+    setPartSupplierId("")
     setPartUnitCost("")
     setPartUnitPrice("")
     setPartStockQty("")
@@ -158,7 +158,7 @@ export function PartsPage() {
         name: partName,
         sku: partSku || undefined,
         oemCode: partOemCode || undefined,
-        supplier: partSupplier || undefined,
+        supplierId: partSupplierId ? (partSupplierId as Id<"suppliers">) : undefined,
         unitCost: partUnitCost ? parseFloat(partUnitCost) : undefined,
         unitPrice: partUnitPrice ? parseFloat(partUnitPrice) : undefined,
         stockQty: parseInt(partStockQty) || 0,
@@ -543,11 +543,12 @@ export function PartsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="partSupplier">Fornitore</Label>
+              <Label htmlFor="partSupplierId">ID Fornitore</Label>
               <Input
-                id="partSupplier"
-                value={partSupplier}
-                onChange={(e) => setPartSupplier(e.target.value)}
+                id="partSupplierId"
+                value={partSupplierId}
+                onChange={(e) => setPartSupplierId(e.target.value)}
+                placeholder="Inserisci ID fornitore"
                 className="h-11"
               />
             </div>

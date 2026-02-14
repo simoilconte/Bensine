@@ -1,5 +1,4 @@
 import { mutation } from "./_generated/server"
-import { v } from "convex/values"
 
 // Migration to convert supplier string to supplierId reference
 export const migrateSupplierToSupplierId = mutation({
@@ -82,7 +81,7 @@ export const migrateSupplierToSupplierId = mutation({
 // Migration to clean up old supplier field from parts (run after the above migration)
 export const cleanupOldSupplierField = mutation({
   args: {},
-  handler: async (ctx) => {
+  handler: async () => {
     // Note: In Convex, we cannot delete fields from existing documents
     // The old 'supplier' field will simply be ignored by the schema validator
     // This migration is a placeholder for documentation purposes
